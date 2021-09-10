@@ -1,0 +1,69 @@
+## 关于一些 npm 包的使用规则
+
+### read-pkg-up
+
+作用：
+  1. 查找最近的package.json
+  2. 抛出更多有用的json错误
+  3. 规范化数据
+
+### issue-regex
+
+用于匹配问题引用的正则表达式
+
+```
+import issueRegex from 'issue-regex';
+
+'Fixes #143 and avajs/ava#1023'.match(issueRegex());
+//=> ['#143', 'avajs/ava#1023']
+
+```
+
+linkify-issues
+
+思考 怎么关联 coding的错误
+
+### terminal-link
+
+Create clickable links in the terminal
+
+### execa
+
+这个包改进了child_process方法：
+
+### p-memoize
+
+记住promise返回和异步函数
+
+通过缓存具有相同输入的调用结果，可用于加速连续函数调用。
+
+默认情况下，只考虑记忆化函数的第一个参数，并且它只适用于基元。如果您需要缓存多个参数或按值缓存objects ，请查看下面的选项。
+
+### ow
+
+函数参数验证
+
+1. 富有表现力的可链接 API
+2. 大量内置验证
+3. 支持自定义验证
+4. Node.js 中的自动标签推断
+5. 用typescript写的
+
+### pkg-dir
+
+查找 Node.js 项目或 npm 包的根目录
+
+
+### util
+
+Node.js 的所有引擎的util模块。
+
+### import-local
+
+如果可用，让全局安装的软件包使用其自身的本地安装版本
+
+对于希望在可用时遵循用户本地安装版本的 CLI 工具很有用，但如果未在本地安装它仍然可以工作。例如，AVA和XO使用这种方法。
+
+### is-installed-globally
+
+检查您的软件包是否已全局安装
