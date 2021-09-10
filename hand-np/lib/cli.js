@@ -13,5 +13,5 @@ if(!importLocal(__filename)){
 		log('Using global install of np.');
 	}
   // eslint-disable-next-line import/no-unassigned-import
-	// require('./cli-implementation');
+	require('./cli-implementation');
 }

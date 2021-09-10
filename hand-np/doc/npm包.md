@@ -67,3 +67,41 @@ Node.js 的所有引擎的util模块。
 ### is-installed-globally
 
 检查您的软件包是否已全局安装
+
+### cosmiconfig
+
+Cosmiconfig 为您的程序搜索并加载配置。
+
+它具有基于 JavaScript 生态系统中传统期望的智能默认值。但它也足够灵活，可以搜索您想要搜索的任何地方，并加载您想要加载的任何内容。
+
+默认情况下，Cosmiconfig 将从您告诉它开始的位置开始并在目录树中搜索以下内容：
+
+* 一个package.json属性
+* 一个 JSON 或 YAML，无扩展名的“rc 文件”
+* 一个“RC文件”与扩展.json，.yaml，.yml，.js，或者.cjs
+* a.config.js或.config.cjsCommonJS 模块
+
+### meow
+
+CLI 应用助手
+
+* 解析参数
+* 将标志转换为驼峰式
+* 使用--no-前缀时否定标志
+* 输出版本时 --version
+* 输出描述和提供的帮助文本时 --help
+* 使未处理的被拒绝的承诺很难失败，而不是默认的静默失败
+* 将进程标题设置为 package.json 中定义的二进制名称
+
+### semver
+npm 的语义版本器
+
+### npm-name
+检查 npm 上是否有包或组织名称可用
+
+### listr
+
+终端任务列表
+
+### npm-login-with-param
+通过参数 来登录
