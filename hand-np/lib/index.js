@@ -1,7 +1,31 @@
+require('any-observable/register/rxjs-all');
+const fs = require('fs');
+const path = require('path');
+const execa = require('execa')
 const Listr = require('listr');
+const split = require('split');
+const {merge, throwError} = require('rxjs');
+const {catchError, filter, finalize} = require('rxjs/operators');
+const streamToObservable = require('@samverschueren/stream-to-observable');
 const hasYarn = require('has-yarn');
+const pkgDir = require('pkg-dir');
+const hostedGitInfo = require('hosted-git-info');
+const prerequisiteTasks = require('./prerequisite-tasks');
+const gitTasks = require('./git-tasks')
 const publish = require('./npm/publish');
+const util = require('./util')
 
+// TODO: 这个代码 后续好好理解
+const exec = (cmd, args) => {
+	// Use `Observable` support if merged https://github.com/sindresorhus/execa/pull/26
+	const cp = execa(cmd, args);
+
+	return merge(
+		streamToObservable(cp.stdout.pipe(split())),
+		streamToObservable(cp.stderr.pipe(split())),
+		cp
+	).pipe(filter(Boolean));
+};
 
 module.exports = async (input = 'patch', options) => {
 
@@ -9,5 +33,118 @@ module.exports = async (input = 'patch', options) => {
   if (!hasYarn() && options.yarn) {
 		throw new Error('Could not use Yarn without yarn.lock file');
 	}
-  const tasks = new Listr()
+  console.log('options', options)
+  const pkg = util.readPkg(options.contents);
+  // 是否执行测试
+  const runTests = options.tests && !options.yolo;
+  // 是否清除 重装
+  const runCleanup = options.cleanup && !options.yolo;
+  const pkgManager = options.yarn === true ? 'yarn' : 'npm';
+	const pkgManagerName = options.yarn === true ? 'Yarn' : 'npm';
+  // 项目根目录
+  const rootDir = pkgDir.sync();
+  // 是否有锁定版本
+  const hasLockFile = fs.existsSync(path.resolve(rootDir, options.yarn ? 'yarn.lock' : 'package-lock.json')) || fs.existsSync(path.resolve(rootDir, 'npm-shrinkwrap.json'));
+  const isOnGitHub = options.repoUrl && (hostedGitInfo.fromUrl(options.repoUrl) || {}).type === 'github';
+  // 测试
+  const testScript = options.testScript || 'test';
+	const testCommand = options.testScript ? ['run', testScript] : [testScript]
+  
+  // 是否仅发布草稿
+  // if (options.releaseDraftOnly) {
+	// 	await releaseTaskHelper(options, pkg);
+	// 	return pkg;
+	// }
+  console.log('pkg', pkg);
+  /**
+   * 任务
+   * 1. 先决条件
+   * 2. git 任务
+   * 3. (需要)清除
+   * 4. (需要)测试
+   * 5. 更改版本
+   * 6. (需要)发布
+   * 7. (需要)2fa 校验
+   * 8. 推送tag
+   * 9. 发布草稿 github
+   */
+  const tasks = new Listr([
+    {
+      title: 'Prerequisite check',
+      enabled: () => options.runPublish,
+      task: () => prerequisiteTasks(input, pkg, options)
+    },
+    // {
+		// 	title: 'Git',
+		// 	task: () => gitTasks(options)
+		// }
+  ], {
+    showSubtasks: false
+  })
+  
+  // 清理
+  if(runCleanup){
+
+  }
+  
+  // 测试
+  if(runTests) {
+
+  }
+  // 更改版本
+  tasks.add([
+		{
+			title: 'Bumping version using Yarn',
+			enabled: () => options.yarn === true,
+			skip: () => {
+				if (options.preview) {
+					let previewText = `[Preview] Command not executed: yarn version --new-version ${input}`;
+
+					if (options.message) {
+						previewText += ` --message '${options.message.replace(/%s/g, input)}'`;
+					}
+
+					return `${previewText}.`;
+				}
+			},
+			task: () => {
+				const args = ['version', '--new-version', input];
+
+				if (options.message) {
+					args.push('--message', options.message);
+				}
+
+				return exec('yarn', args);
+			}
+		},
+		{
+			title: 'Bumping version using npm',
+			enabled: () => options.yarn === false,
+			skip: () => {
+				if (options.preview) {
+					let previewText = `[Preview] Command not executed: npm version ${input}`;
+
+					if (options.message) {
+						previewText += ` --message '${options.message.replace(/%s/g, input)}'`;
+					}
+
+					return `${previewText}.`;
+				}
+			},
+			task: () => {
+				const args = ['version', input];
+
+				if (options.message) {
+					args.push('--message', options.message);
+				}
+
+				return exec('npm', args);
+			}
+		}
+	]);
+  
+  // 发布
+  if (options.runPublish) {}
+
+  await tasks.run();
 }

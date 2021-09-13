@@ -9,7 +9,9 @@ module.exports = async (options, pkg) => {
   const extraBaseUrls = ['gitlab.com'];
   // 仓库地址
 	const repoUrl = pkg.repository && githubUrlFromGit(pkg.repository.url, {extraBaseUrls});
-
+  /**
+   * 问题
+   */
   const prompts = [
     {
       type: 'list',
@@ -56,6 +58,7 @@ module.exports = async (options, pkg) => {
   
   console.log('answer', answer)
   return {
+    ...options,
     ...answer
   }
 }

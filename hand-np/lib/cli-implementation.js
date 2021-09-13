@@ -5,12 +5,29 @@ const meow = require('meow');
 const logSymbols = require('log-symbols');
 const hasYarn = require('has-yarn');
 const config = require('./config');
-// const git = require('./git-util');
+const git = require('./git-util');
 const {isPackageNameAvailable} = require('./npm/util')
 const version = require('./version');
 const util = require('./util');
 const ui = require('./ui');
 const np = require('.');
+/**
+ * 基本参数
+ * any-branch 是否允许任何分支发布
+ * branch 允许发布的分支
+ * no-cleanup  是否跳过清空 node_modules
+ * no-tests 是否跳过测试
+ * yolo 跳过清空和测试
+ * no-publish 是否跳过发布
+ * preview 显示任务但是不执行
+ * tag  使用给定的tag 发布
+ * no-yarn 不使用yarn
+ * no-release-draft
+ * release-draft-only
+ * test-script
+ * no-2fa 
+ * message 版本更细提交信息 
+ */
 
 const cli = meow(`
 	Usage
@@ -95,7 +112,6 @@ const cli = meow(`
 
 // 异步自执行函数
 (async() => {
-  console.log('??>>>')
   // pkg json
   const pkg = util.readPkg();
 
@@ -137,9 +153,7 @@ const cli = meow(`
 	const version = flags.releaseDraftOnly ? pkg.version : (cli.input.length > 0 ? cli.input[0] : false);
 
   // 获取分支（git 默认分支）
-  // const branch = flags.branch || await git.defaultBranch()
-  const branch = flags.branch
-  
+  const branch = flags.branch || await git.defaultBranch()
   // ui 交互
   const options = await ui({
 		...flags,

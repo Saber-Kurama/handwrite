@@ -62,3 +62,11 @@ module.exports.validate = version => {
 	}
 };
 
+// 检查版本 是否满足 依赖的要求（package.json）
+module.exports.verifyRequirementSatisfied = (dependency, version) => {
+	const depRange = require('../package.json').engines[dependency];
+	if (!module.exports(version).satisfies(depRange)) {
+		throw new Error(`Please upgrade to ${dependency}${depRange}`);
+	}
+};
+
