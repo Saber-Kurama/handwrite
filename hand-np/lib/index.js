@@ -10,6 +10,8 @@ const streamToObservable = require('@samverschueren/stream-to-observable');
 const hasYarn = require('has-yarn');
 const pkgDir = require('pkg-dir');
 const hostedGitInfo = require('hosted-git-info');
+const onetime = require('onetime');
+const logSymbols = require('log-symbols');
 const prerequisiteTasks = require('./prerequisite-tasks');
 const gitTasks = require('./git-tasks')
 const publish = require('./npm/publish');
@@ -55,6 +57,31 @@ module.exports = async (input = 'patch', options) => {
 	// 	await releaseTaskHelper(options, pkg);
 	// 	return pkg;
 	// }
+  
+  // 发布状态
+  let publishStatus = 'UNKNOWN';
+	let pushedObjects;
+  // 回滚
+	const rollback = onetime(async () => {
+		console.log('\nPublish failed. Rolling back to the previous state…');
+
+		const tagVersionPrefix = await util.getTagVersionPrefix(options);
+
+		const latestTag = await git.latestTag();
+		const versionInLatestTag = latestTag.slice(tagVersionPrefix.length);
+
+		try {
+			if (versionInLatestTag === util.readPkg().version &&
+				versionInLatestTag !== pkg.version) { // Verify that the package's version has been bumped before deleting the last tag and commit.
+				await git.deleteTag(latestTag);
+				await git.removeLastCommit();
+			}
+
+			console.log('Successfully rolled back the project to its previous state.');
+		} catch (error) {
+			console.log(`Couldn't roll back because of the following error:\n${error}`);
+		}
+	});
   console.log('pkg', pkg);
   /**
    * 任务
@@ -176,5 +203,33 @@ module.exports = async (input = 'patch', options) => {
     ])
   }
 
+  tasks.add({
+		title: 'Pushing tags',
+		skip: async () => {
+      // 没有上游
+			if (!(await git.hasUpstream())) {
+				return 'Upstream branch not found; not pushing.';
+			}
+      // 预览跳过
+			if (options.preview) {
+				return '[Preview] Command not executed: git push --follow-tags.';
+			}
+      // 推送失败
+			if (publishStatus === 'FAILED' && options.runPublish) {
+				return 'Couldn\'t publish package to npm; not pushing.';
+			}
+		},
+		task: async () => {
+			pushedObjects = await git.pushGraceful(isOnGitHub);
+		}
+	});
+
   await tasks.run();
+  // ? 这个有值为啥报错呢？
+  if (pushedObjects) {
+		console.error(`\n${logSymbols.error} ${pushedObjects.reason}`);
+	}
+
+	const {packageJson: newPkg} = await readPkgUp();
+	return newPkg;
 }

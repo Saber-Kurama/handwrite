@@ -111,3 +111,10 @@ npm 的语义版本器
 
 ### npm-login-with-param
 通过参数 来登录
+
+### onetime
+确保函数只调用一次
+
+### log-symbols
+
+各种日志级别的彩色符号

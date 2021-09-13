@@ -50,7 +50,9 @@ class Version {
 module.exports = version => new Version(version)
 
 module.exports.SEMVER_INCREMENTS = ['patch', 'minor', 'major', 'prepatch', 'preminor', 'premajor', 'prerelease'];
-
+module.exports.PRERELEASE_VERSIONS = ['prepatch', 'preminor', 'premajor', 'prerelease'];
+// 是否是预览版本
+module.exports.isPrereleaseOrIncrement = input => module.exports(input).isPrerelease() || module.exports.PRERELEASE_VERSIONS.includes(input);
 const isValidVersion = input => Boolean(semver.valid(input));
 
 // 校验新的版本
