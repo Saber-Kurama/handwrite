@@ -91,12 +91,13 @@ module.exports = async (input = 'patch', options) => {
   if(runTests) {
 
   }
-  // 更改版本
+  // 更改版本 (commit 版本更新信息)
   tasks.add([
 		{
 			title: 'Bumping version using Yarn',
 			enabled: () => options.yarn === true,
 			skip: () => {
+        // 如果是预览就跳过
 				if (options.preview) {
 					let previewText = `[Preview] Command not executed: yarn version --new-version ${input}`;
 
@@ -121,6 +122,7 @@ module.exports = async (input = 'patch', options) => {
 			title: 'Bumping version using npm',
 			enabled: () => options.yarn === false,
 			skip: () => {
+        // 如果是预览就跳过
 				if (options.preview) {
 					let previewText = `[Preview] Command not executed: npm version ${input}`;
 
@@ -144,7 +146,35 @@ module.exports = async (input = 'patch', options) => {
 	]);
   
   // 发布
-  if (options.runPublish) {}
+  if (options.runPublish) {
+    tasks.add([
+      {
+        title: `Publishing package using ${pkgManagerName}`,
+				skip: () => {
+          // 如果是预览就跳过
+					if (options.preview) {
+						const args = publish.getPackagePublishArguments(options);
+						return `[Preview] Command not executed: ${pkgManager} ${args.join(' ')}.`;
+					}
+				},
+        task: (context, task) => {
+          let hasError = false;
+          return publish(context, pkgManager, task, options)
+						.pipe(
+							catchError(async error => {
+								hasError = true;
+                // 回滚
+								// await rollback();
+								throw new Error(`Error publishing package:\n${error.message}\n\nThe project was rolled back to its previous state.`);
+							}),
+							finalize(() => {
+								publishStatus = hasError ? 'FAILED' : 'SUCCESS';
+							})
+						);
+        }
+      }
+    ])
+  }
 
   await tasks.run();
 }
