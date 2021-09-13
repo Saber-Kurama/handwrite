@@ -2,12 +2,15 @@
 'use strict';
 
 const meow = require('meow');
+const logSymbols = require('log-symbols');
+const hasYarn = require('has-yarn');
 const config = require('./config');
-const git = require('./git-util');
+// const git = require('./git-util');
 const {isPackageNameAvailable} = require('./npm/util')
 const version = require('./version');
 const util = require('./util');
 const ui = require('./ui');
+const np = require('.');
 
 const cli = meow(`
 	Usage
@@ -98,7 +101,11 @@ const cli = meow(`
 
   // 默认标志
   const defaultFlags = {
-
+    cleanup: true,
+    tests: true,
+		publish: true,
+    releaseDraft: true, // 发布草稿
+    yarn: hasYarn(), // 是否有yarn
   }
   // 本地配置
   const localConfig = await config();
@@ -107,7 +114,7 @@ const cli = meow(`
   const flags = {
 		...defaultFlags,
 		...localConfig,
-		...cli.flags
+		...cli.flags // 目前默认值是 {]}
 	};
   
   // 解决 meow的问题
@@ -126,11 +133,14 @@ const cli = meow(`
 
   // Use current (latest) version when 'releaseDraftOnly', otherwise use the first argument.
   //'releaseDraftOnly' 时使用当前（最新）版本，否则使用第一个参数。
+  // 版本
 	const version = flags.releaseDraftOnly ? pkg.version : (cli.input.length > 0 ? cli.input[0] : false);
 
   // 获取分支（git 默认分支）
-  const branch = flags.branch || await git.defaultBranch()
-
+  // const branch = flags.branch || await git.defaultBranch()
+  const branch = flags.branch
+  
+  // ui 交互
   const options = await ui({
 		...flags,
 		availability,
@@ -141,6 +151,8 @@ const cli = meow(`
 
   // console.log(flags)
   // console.log(cli)
+  const newPkg = await np(options.version, options);
+
 })().catch(error => {
   console.error(`\n${logSymbols.error} ${error.message}`);
 	process.exit(1);

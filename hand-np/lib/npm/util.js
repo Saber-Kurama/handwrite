@@ -11,6 +11,7 @@ exports.isPackageNameAvailable = async pkg => {
 
   // 是不是外部配置
 	if (exports.isExternalRegistry(pkg)) {
+    // 发布包的地址
 		args.push({
 			registryUrl: pkg.publishConfig.registry
 		});
@@ -26,4 +27,5 @@ exports.isPackageNameAvailable = async pkg => {
 	return availability;
 };
 // 发布的配置是一个对象并且registry
+// package.json 中 publishConfig 有值 代表是外部发包
 exports.isExternalRegistry = pkg => typeof pkg.publishConfig === 'object' && typeof pkg.publishConfig.registry === 'string'
