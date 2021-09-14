@@ -1,7 +1,39 @@
 'use strict';
 const inquirer = require('inquirer');
 const version = require('./version');
+const util = require('./util');
 const prettyVersionDiff = require('./pretty-version-diff');
+const {prereleaseTags, checkIgnoreStrategy, getRegistryUrl, isExternalRegistry} = require('./npm/util')
+
+const checkNewFiles = async pkg => {
+	const newFiles = await util.getNewFiles(pkg);
+	if ((!newFiles.unpublished || newFiles.unpublished.length === 0) && (!newFiles.firstTime || newFiles.firstTime.length === 0)) {
+		return true;
+	}
+
+	const messages = [];
+	if (newFiles.unpublished.length > 0) {
+		messages.push(`The following new files will not be part of your published package:\n${chalk.reset(newFiles.unpublished.map(path => `- ${path}`).join('\n'))}`);
+	}
+
+	if (newFiles.firstTime.length > 0) {
+		messages.push(`The following new files will be published the first time:\n${chalk.reset(newFiles.firstTime.map(path => `- ${path}`).join('\n'))}`);
+	}
+
+	if (!isInteractive()) {
+		console.log(messages.join('\n'));
+		return true;
+	}
+
+	const answers = await inquirer.prompt([{
+		type: 'confirm',
+		name: 'confirm',
+		message: `${messages.join('\n')}\nContinue?`,
+		default: false
+	}]);
+
+	return answers.confirm;
+};
 
 module.exports = async (options, pkg) => {
   // 旧版本
@@ -9,6 +41,15 @@ module.exports = async (options, pkg) => {
   const extraBaseUrls = ['gitlab.com'];
   // 仓库地址
 	const repoUrl = pkg.repository && githubUrlFromGit(pkg.repository.url, {extraBaseUrls});
+  const pkgManager = options.yarn ? 'yarn' : 'npm';
+	const registryUrl = await getRegistryUrl(pkgManager, pkg);
+	const releaseBranch = options.branch
+
+  if (options.runPublish) {
+    checkIgnoreStrategy(pkg)
+
+    const answerIgnoredFiles = await checkNewFiles(pkg);
+  }
   /**
    * 问题
    */

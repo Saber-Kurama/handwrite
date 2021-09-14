@@ -118,3 +118,36 @@ npm 的语义版本器
 ### log-symbols
 
 各种日志级别的彩色符号
+
+### meow
+
+关于  子 command 的问题
+https://gist.github.com/MartinMuzatko/2922add0f84535a44f98a8e8fa729efa
+
+### ignore-walk
+
+嵌套/递归.gitignore/.npmignore解析和过滤。
+
+### minimatch
+
+最小匹配实用程序。
+
+这是 npm 内部使用的匹配库。
+
+它的工作原理是将 glob 表达式转换为 JavaScriptRegExp 对象。
+
+### is-interactive
+
+检查 stdout 或 stderr 是否是交互式的
+
+它检查流是TTY，不是哑终端，也不是在 CI 中运行。
+
+这对于决定是否在终端中呈现交互式 UI 或动画很有用。
+
+### ow
+
+函数参数验证
+
+### is-scoped
+
+Check if a string is a scoped npm package name

@@ -1,5 +1,32 @@
 'use strict';
 const execa = require('execa');
+const ignoreWalker = require('ignore-walk');
+const pkgDir = require('pkg-dir');
+
+// 最后的tag
+exports.latestTag = async () => {
+	const {stdout} = await execa('git', ['describe', '--abbrev=0', '--tags']);
+	return stdout;
+};
+
+// 自上次发布以来的新文件
+exports.newFilesSinceLastRelease = async () => {
+	try {
+		const {stdout} = await execa('git', ['diff', '--name-only', '--diff-filter=A', await this.latestTag(), 'HEAD']);
+		if (stdout.trim().length === 0) {
+			return [];
+		}
+
+		const result = stdout.trim().split('\n').map(row => row.trim());
+		return result;
+	} catch {
+		// Get all files under version control
+		return ignoreWalker({
+			path: pkgDir.sync(),
+			ignoreFiles: ['.gitignore']
+		});
+	}
+};
 
 // 获取当前分支
 exports.currentBranch = async () => {
